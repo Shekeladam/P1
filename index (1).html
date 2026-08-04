@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FC Lions</title>
+  <meta name="description" content="Official home of FC Lions — squad, fixtures, kits, and club news." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <nav class="nav container">
+      <a href="#" class="crest">
+        <img src="images/logo.webp" alt="" class="crest-mark" />
+        <span class="crest-name">FC&nbsp;Lions</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#about">Club</a></li>
+        <li><a href="#kits">Kits</a></li>
+        <li class="nav-dropdown">
+          <a href="#squad">Squad</a>
+          <ul class="dropdown-menu">
+            <li><a href="#squad">Starters</a></li>
+            <li><a href="#bench">Bench</a></li>
+          </ul>
+        </li>
+        <li><a href="#shortlist">Shortlist</a></li>
+        <li><a href="#fixtures">Fixtures</a></li>
+        <li><a href="#standings">Table</a></li>
+        <li><a href="#visit">Visit</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-inner">
+        <p class="eyebrow">EFL Championship</p>
+        <h1>FC Lions</h1>
+        <p class="hero-tagline">Founded on one idea: get the ball in the net. Everything else is detail.</p>
+        <div class="hero-actions">
+          <a href="#fixtures" class="btn btn-primary">View fixtures</a>
+          <a href="#squad" class="btn btn-ghost">Meet the squad</a>
+        </div>
+      </div>
+      <div class="hero-stripe" aria-hidden="true"></div>
+    </section>
+
+    <section id="about" class="section container">
+      <div class="section-head">
+        <p class="eyebrow">The Club</p>
+        <h2>The pride that wouldn't stay quiet</h2>
+      </div>
+      <div class="about-grid">
+        <p>
+          FC Lions started in 2019 as a supporters' collective who pooled
+          matchday money to stop a non-league ground from being sold off for
+          flats — and ended up owning the club outright. Six years, three
+          promotions, and one very literal stadium name later, Roar Stadium
+          is exactly what it sounds like on a Saturday afternoon.
+        </p>
+        <dl class="stat-row">
+          <div class="stat">
+            <dt>Founded</dt>
+            <dd>2019</dd>
+          </div>
+          <div class="stat">
+            <dt>Home ground</dt>
+            <dd>Roar&nbsp;Stadium</dd>
+          </div>
+          <div class="stat">
+            <dt>Capacity</dt>
+            <dd>4,200</dd>
+          </div>
+          <div class="stat">
+            <dt>League</dt>
+            <dd>EFL&nbsp;Championship</dd>
+          </div>
+          <div class="stat">
+            <dt>Transfer budget</dt>
+            <dd id="transfer-budget-value">&pound;9m</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section id="kits" class="section section-dark">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">2026 Kits</p>
+          <h2>Home, away, and third</h2>
+        </div>
+        <div class="kit-grid">
+          <article class="kit-card">
+            <div class="kit-swatch kit-home" aria-hidden="true">
+              <img src="images/logo.webp" alt="" class="kit-crest kit-crest-left" />
+            </div>
+            <h3>Home</h3>
+            <p>Marbled purple and black, crest on the left chest.</p>
+          </article>
+          <article class="kit-card">
+            <div class="kit-swatch kit-away" aria-hidden="true">
+              <img src="images/logo.webp" alt="" class="kit-crest kit-crest-right" />
+            </div>
+            <h3>Away</h3>
+            <p>Cyan-to-blue gradient, crest on the right chest.</p>
+          </article>
+          <article class="kit-card">
+            <div class="kit-swatch kit-third" aria-hidden="true">
+              <span class="kit-stripe"></span>
+            </div>
+            <h3>Third</h3>
+            <p>Deep teal, coral hoop across the chest.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="squad" class="section container">
+      <div class="section-head shortlist-head">
+        <div>
+          <p class="eyebrow">First Team</p>
+          <h2>The squad</h2>
+        </div>
+        <button type="button" class="btn btn-ghost-light offers-btn" id="offers-button">
+          Incoming offers<span class="offers-count" id="offers-count" hidden>0</span>
+        </button>
+      </div>
+
+      <div class="filter-row" role="group" aria-label="Filter squad by position">
+        <button type="button" class="filter-btn is-active" data-filter="all">All</button>
+        <button type="button" class="filter-btn" data-filter="GK">Goalkeepers</button>
+        <button type="button" class="filter-btn" data-filter="DEF">Defenders</button>
+        <button type="button" class="filter-btn" data-filter="MID">Midfielders</button>
+        <button type="button" class="filter-btn" data-filter="FWD">Forwards</button>
+      </div>
+
+      <p class="roster-hint">Drag a player onto the bench to swap them out of the starting XI, or click a player to sell.</p>
+      <ul class="roster-grid" id="starters-roster" data-group="starter"></ul>
+    </section>
+
+    <section id="bench" class="section container">
+      <div class="section-head">
+        <p class="eyebrow">Matchday Squad</p>
+        <h2>The bench</h2>
+      </div>
+      <p class="roster-hint">Drag a player onto the squad above to bring them into the starting XI, or click a player to sell.</p>
+      <ul class="roster-grid" id="bench-roster" data-group="bench"></ul>
+    </section>
+
+    <section id="shortlist" class="section section-dark">
+      <div class="container">
+        <div class="section-head shortlist-head">
+          <div>
+            <p class="eyebrow">Transfer Window</p>
+            <h2>Shortlist</h2>
+          </div>
+          <button type="button" class="icon-btn" id="refresh-shortlist" aria-label="Refresh shortlist" title="Refresh shortlist">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 0 1 15.5-6.36L21 8" />
+              <path d="M21 3v5h-5" />
+              <path d="M21 12a9 9 0 0 1-15.5 6.36L3 16" />
+              <path d="M3 21v-5h5" />
+            </svg>
+          </button>
+        </div>
+        <p class="roster-hint roster-hint--dark">Click a player to make an offer &mdash; signed players join the bench.</p>
+        <ul class="roster-grid" id="shortlist-roster"></ul>
+      </div>
+    </section>
+
+    <section id="fixtures" class="section section-dark">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">2026–27 Season</p>
+          <h2>Fixtures &amp; results</h2>
+        </div>
+        <div class="table-scroll table-scroll--fixtures">
+          <table class="fixtures-table">
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Opponent</th>
+                <th scope="col">Venue</th>
+                <th scope="col">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-date="2026-03-07" data-outcome="loss" data-score="0–1">
+                <td>Mar 7</td>
+                <td>West Bromwich Albion</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-03-14" data-outcome="win" data-score="2–1">
+                <td>Mar 14</td>
+                <td>Millwall</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-03-21" data-outcome="draw" data-score="2–2">
+                <td>Mar 21</td>
+                <td>Watford</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-03-28" data-outcome="loss" data-score="0–3">
+                <td>Mar 28</td>
+                <td>Leeds United</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-04-04" data-outcome="loss" data-score="0–3">
+                <td>Apr 4</td>
+                <td>Sheffield United</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-04-11" data-outcome="loss" data-score="0–2">
+                <td>Apr 11</td>
+                <td>Burnley</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-04-18" data-outcome="loss" data-score="0–1">
+                <td>Apr 18</td>
+                <td>Sunderland</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-04-25" data-outcome="draw" data-score="1–1">
+                <td>Apr 25</td>
+                <td>Middlesbrough</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-05-02" data-outcome="loss" data-score="0–1">
+                <td>May 2</td>
+                <td>Norwich City</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-05-09" data-outcome="win" data-score="1–0">
+                <td>May 9</td>
+                <td>Hull City</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-05-16" data-outcome="win" data-score="1–0">
+                <td>May 16</td>
+                <td>Blackburn Rovers</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-05-23" data-outcome="loss" data-score="0–1">
+                <td>May 23</td>
+                <td>Swansea City</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-05-30" data-outcome="win" data-score="1–0">
+                <td>May 30</td>
+                <td>Stoke City</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-06-06" data-outcome="win" data-score="2–0">
+                <td>Jun 6</td>
+                <td>Cardiff City</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-06-13" data-outcome="draw" data-score="1–1">
+                <td>Jun 13</td>
+                <td>Queens Park Rangers</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-06-20" data-outcome="draw" data-score="0–0">
+                <td>Jun 20</td>
+                <td>Portsmouth</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-06-27" data-outcome="win" data-score="3–1">
+                <td>Jun 27</td>
+                <td>Plymouth Argyle</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-07-04" data-outcome="win" data-score="2–0">
+                <td>Jul 4</td>
+                <td>Oxford United</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-07-11" data-outcome="draw" data-score="0–0">
+                <td>Jul 11</td>
+                <td>Derby County</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-07-18" data-outcome="win" data-score="2–0">
+                <td>Jul 18</td>
+                <td>Sheffield Wednesday</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-07-25">
+                <td>Jul 25</td>
+                <td>Preston North End</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-08-01">
+                <td>Aug 1</td>
+                <td>Coventry City</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-08-08">
+                <td>Aug 8</td>
+                <td>Bristol City</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-08-15">
+                <td>Aug 15</td>
+                <td>Coventry City</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-08-22">
+                <td>Aug 22</td>
+                <td>Preston North End</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-08-29">
+                <td>Aug 29</td>
+                <td>Sheffield Wednesday</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-09-05">
+                <td>Sep 5</td>
+                <td>Derby County</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-09-12">
+                <td>Sep 12</td>
+                <td>Oxford United</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-09-19">
+                <td>Sep 19</td>
+                <td>Plymouth Argyle</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-09-26">
+                <td>Sep 26</td>
+                <td>Portsmouth</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-10-03">
+                <td>Oct 3</td>
+                <td>Queens Park Rangers</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-10-10">
+                <td>Oct 10</td>
+                <td>Cardiff City</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-10-17">
+                <td>Oct 17</td>
+                <td>Stoke City</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-10-24">
+                <td>Oct 24</td>
+                <td>Swansea City</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-10-31">
+                <td>Oct 31</td>
+                <td>Blackburn Rovers</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-11-07">
+                <td>Nov 7</td>
+                <td>Hull City</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-11-14">
+                <td>Nov 14</td>
+                <td>Norwich City</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-11-21">
+                <td>Nov 21</td>
+                <td>Middlesbrough</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-11-28">
+                <td>Nov 28</td>
+                <td>Sunderland</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-12-05">
+                <td>Dec 5</td>
+                <td>Burnley</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-12-12">
+                <td>Dec 12</td>
+                <td>Sheffield United</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-12-19">
+                <td>Dec 19</td>
+                <td>Leeds United</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2026-12-26">
+                <td>Dec 26</td>
+                <td>Watford</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2027-01-02">
+                <td>Jan 2</td>
+                <td>Millwall</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2027-01-09">
+                <td>Jan 9</td>
+                <td>West Bromwich Albion</td>
+                <td>Home</td>
+                <td class="fx-result"></td>
+              </tr>
+              <tr data-date="2027-01-16">
+                <td>Jan 16</td>
+                <td>Bristol City</td>
+                <td>Away</td>
+                <td class="fx-result"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="standings" class="section container">
+      <div class="section-head">
+        <p class="eyebrow">EFL Championship</p>
+        <h2>League table</h2>
+      </div>
+      <div class="table-scroll">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th scope="col">Pos</th>
+              <th scope="col">Club</th>
+              <th scope="col">P</th>
+              <th scope="col">W</th>
+              <th scope="col">D</th>
+              <th scope="col">L</th>
+              <th scope="col">GD</th>
+              <th scope="col">Pts</th>
+              <th scope="col">Rating</th>
+            </tr>
+          </thead>
+          <tbody id="standings-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="visit" class="section container">
+      <div class="section-head">
+        <p class="eyebrow">Matchday</p>
+        <h2>Visit Roar Stadium</h2>
+      </div>
+      <div class="about-grid">
+        <p>
+          Gates open ninety minutes before kickoff. Tickets for the Preston
+          North End match are on sale now — turn up early, the north terrace
+          fills fast.
+        </p>
+        <dl class="stat-row">
+          <div class="stat">
+            <dt>Address</dt>
+            <dd>14 Harbor Road, Meridian</dd>
+          </div>
+          <div class="stat">
+            <dt>Box office</dt>
+            <dd>tickets@fclions.example</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="container">&copy; <span id="year"></span> FC Lions. Built with Claude Code.</p>
+  </footer>
+
+  <div class="modal-overlay" id="buy-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="buy-modal-title">
+      <p id="buy-modal-title">Are you sure you want to buy <strong id="buy-modal-name"></strong> for <strong id="buy-modal-price"></strong>?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="buy-modal-yes">Yes</button>
+        <button type="button" class="btn btn-ghost btn-ghost-light" id="buy-modal-no">No</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="sell-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sell-modal-title">
+      <p id="sell-modal-title">Are you sure you want to sell <strong id="sell-modal-name"></strong>?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="sell-modal-yes">Yes</button>
+        <button type="button" class="btn btn-ghost btn-ghost-light" id="sell-modal-no">No</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="searching-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="searching-modal-title">
+      <p id="searching-modal-title">The assistant manager is searching for buyers. He will come back shortly.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="searching-modal-ok">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="offers-modal" hidden>
+    <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="offers-modal-title">
+      <p id="offers-modal-title"><strong>Incoming offers</strong></p>
+      <ul class="offers-list" id="offers-list"></ul>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost btn-ghost-light" id="offers-modal-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
