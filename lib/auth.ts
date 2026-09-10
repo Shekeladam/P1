@@ -74,3 +74,32 @@ export async function getSessionUserId(): Promise<number | null> {
   if (!token) return null;
   return verifySessionToken(token);
 }
+
+// --- Google OAuth CSRF state ---
+// A short-lived cookie holding a random token that must round-trip through
+// Google's redirect unchanged, so the callback can reject forged requests.
+
+const OAUTH_STATE_COOKIE = "novax_oauth_state";
+const OAUTH_STATE_MAX_AGE_SECONDS = 600; // 10 minutes
+
+export function generateOAuthState(): string {
+  return randomBytes(16).toString("hex");
+}
+
+export async function setOAuthStateCookie(state: string): Promise<void> {
+  const store = await cookies();
+  store.set(OAUTH_STATE_COOKIE, state, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: OAUTH_STATE_MAX_AGE_SECONDS,
+  });
+}
+
+export async function popOAuthStateCookie(): Promise<string | null> {
+  const store = await cookies();
+  const value = store.get(OAUTH_STATE_COOKIE)?.value ?? null;
+  store.delete(OAUTH_STATE_COOKIE);
+  return value;
+}

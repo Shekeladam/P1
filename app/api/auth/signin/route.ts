@@ -16,7 +16,12 @@ export async function POST(req: Request) {
   try {
     await ensureSchema();
     const user = await getUserByEmail(email);
-    if (!user || !verifyPassword(password, user.password_hash, user.password_salt)) {
+    if (
+      !user ||
+      !user.password_hash ||
+      !user.password_salt ||
+      !verifyPassword(password, user.password_hash, user.password_salt)
+    ) {
       return NextResponse.json({ error: "Incorrect email or password." }, { status: 401 });
     }
 

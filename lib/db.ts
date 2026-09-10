@@ -38,13 +38,18 @@ export async function ensureSchema(): Promise<void> {
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      password_salt TEXT NOT NULL,
+      password_hash TEXT,
+      password_salt TEXT,
       cash_balance NUMERIC NOT NULL DEFAULT ${STARTING_CASH_BALANCE},
       display_name TEXT,
+      google_id TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT;
+    ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+    ALTER TABLE users ALTER COLUMN password_salt DROP NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_idx ON users(google_id);
     CREATE TABLE IF NOT EXISTS holdings (
       id SERIAL PRIMARY KEY,
       user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -114,10 +119,11 @@ export async function setLastSentAt(date: Date): Promise<void> {
 export type User = {
   id: number;
   email: string;
-  password_hash: string;
-  password_salt: string;
+  password_hash: string | null;
+  password_salt: string | null;
   cash_balance: number;
   display_name: string | null;
+  google_id: string | null;
 };
 
 export type Holding = { symbol: string; quantity: number };
@@ -143,15 +149,29 @@ export async function createUser(
   const result = await getPool().query<User>(
     `INSERT INTO users (email, password_hash, password_salt, cash_balance, display_name)
      VALUES ($1, $2, $3, ${STARTING_CASH_BALANCE}, $4)
-     RETURNING id, email, password_hash, password_salt, cash_balance, display_name`,
+     RETURNING id, email, password_hash, password_salt, cash_balance, display_name, google_id`,
     [email.toLowerCase().trim(), passwordHash, passwordSalt, displayName]
+  );
+  return result.rows[0];
+}
+
+export async function createGoogleUser(
+  email: string,
+  googleId: string,
+  displayName: string | null
+): Promise<User> {
+  const result = await getPool().query<User>(
+    `INSERT INTO users (email, google_id, cash_balance, display_name)
+     VALUES ($1, $2, ${STARTING_CASH_BALANCE}, $3)
+     RETURNING id, email, password_hash, password_salt, cash_balance, display_name, google_id`,
+    [email.toLowerCase().trim(), googleId, displayName]
   );
   return result.rows[0];
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   const result = await getPool().query<User>(
-    `SELECT id, email, password_hash, password_salt, cash_balance, display_name FROM users WHERE email = $1`,
+    `SELECT id, email, password_hash, password_salt, cash_balance, display_name, google_id FROM users WHERE email = $1`,
     [email.toLowerCase().trim()]
   );
   return result.rows[0] ?? null;
@@ -159,10 +179,22 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function getUserById(id: number): Promise<User | null> {
   const result = await getPool().query<User>(
-    `SELECT id, email, password_hash, password_salt, cash_balance, display_name FROM users WHERE id = $1`,
+    `SELECT id, email, password_hash, password_salt, cash_balance, display_name, google_id FROM users WHERE id = $1`,
     [id]
   );
   return result.rows[0] ?? null;
+}
+
+export async function getUserByGoogleId(googleId: string): Promise<User | null> {
+  const result = await getPool().query<User>(
+    `SELECT id, email, password_hash, password_salt, cash_balance, display_name, google_id FROM users WHERE google_id = $1`,
+    [googleId]
+  );
+  return result.rows[0] ?? null;
+}
+
+export async function linkGoogleId(userId: number, googleId: string): Promise<void> {
+  await getPool().query(`UPDATE users SET google_id = $1 WHERE id = $2`, [googleId, userId]);
 }
 
 export async function updateDisplayName(userId: number, displayName: string): Promise<void> {
