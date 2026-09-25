@@ -87,6 +87,8 @@ export default function TradePage() {
       const err = params.get("error");
       if (err === "google_auth_failed") setAuthError("Google sign-in failed. Please try again.");
       if (err === "google_not_configured") setAuthError("Google sign-in isn't set up yet.");
+      if (err === "microsoft_auth_failed") setAuthError("Microsoft sign-in failed. Please try again.");
+      if (err === "microsoft_not_configured") setAuthError("Microsoft sign-in isn't set up yet.");
     }
     checkOAuthError();
   }, []);
@@ -255,6 +257,18 @@ export default function TradePage() {
                   />
                 </svg>
                 Continue with Google
+              </a>
+              <a
+                href="/api/auth/microsoft"
+                className="w-full flex items-center justify-center gap-2 rounded-md py-2 mb-3 text-sm font-medium bg-white hover:bg-zinc-100 text-zinc-900 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 21 21" aria-hidden="true">
+                  <rect x="1" y="1" width="9" height="9" fill="#F25022" />
+                  <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
+                  <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
+                  <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+                </svg>
+                Continue with Microsoft
               </a>
               <div className="flex items-center gap-2 mb-3 text-xs text-zinc-600">
                 <div className="flex-1 h-px bg-zinc-800" />
