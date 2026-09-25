@@ -1,5 +1,11 @@
 document.getElementById("year").textContent = new Date().getFullYear();
 
+// Durable cross-redeploy save: a no-op until the db-persistence block at
+// the bottom of this file (once all game state exists) swaps in the real
+// implementation. Every save*() below calls this, so nothing needs to
+// know whether that block has run yet.
+let schedulePersist = () => {};
+
 // Keep anchor-jump scroll offset in sync with the sticky header's real
 // height, since the nav wraps to extra lines on narrow viewports.
 function syncHeaderScrollOffset() {
@@ -29,180 +35,6 @@ function seededRandom(seed) {
   };
 }
 
-// The rest of the EFL Championship. Star ratings are a fixed squad-quality
-// reputation (not derived from results); everything else about a club's
-// record - games played, W/D/L, GD, points, table position - is simulated
-// so the table actually moves as time passes, same as the fixtures do.
-const LEAGUE_CLUBS = [
-  { name: "Leeds United", stars: 4 },
-  { name: "Sheffield United", stars: 3 },
-  { name: "Burnley", stars: 3.5 },
-  { name: "Sunderland", stars: 3.5 },
-  { name: "Coventry City", stars: 3 },
-  { name: "Middlesbrough", stars: 3 },
-  { name: "West Bromwich Albion", stars: 2.5 },
-  { name: "Norwich City", stars: 2.5 },
-  { name: "Watford", stars: 2.5 },
-  { name: "Bristol City", stars: 2.5 },
-  { name: "Hull City", stars: 3 },
-  { name: "Preston North End", stars: 2.5 },
-  { name: "Millwall", stars: 2 },
-  { name: "Blackburn Rovers", stars: 2 },
-  { name: "Swansea City", stars: 2 },
-  { name: "Stoke City", stars: 2.5 },
-  { name: "Cardiff City", stars: 1.5 },
-  { name: "Queens Park Rangers", stars: 1.5 },
-  { name: "Portsmouth", stars: 1.5 },
-  { name: "Plymouth Argyle", stars: 1.5 },
-  { name: "Oxford United", stars: 1 },
-  { name: "Derby County", stars: 1 },
-  { name: "Sheffield Wednesday", stars: 1 },
-];
-
-function pickOutcome(opponentStars, lionsStars, rng) {
-  const diff = opponentStars - lionsStars;
-  const winWeight = Math.max(0.05, 1 - 0.35 * diff);
-  const lossWeight = Math.max(0.05, 1 + 0.35 * diff);
-  const drawWeight = 1;
-  const total = winWeight + drawWeight + lossWeight;
-  const r = rng() * total;
-  if (r < winWeight) return "win";
-  if (r < winWeight + drawWeight) return "draw";
-  return "loss";
-}
-
-function pickScore(outcome, rng) {
-  const small = () => Math.floor(rng() * 3); // 0, 1, or 2
-  if (outcome === "win") {
-    const opp = Math.floor(rng() * 2); // 0 or 1
-    const lions = opp + 1 + Math.floor(rng() * 2); // opp + 1 or 2
-    return { lions, opp };
-  }
-  if (outcome === "loss") {
-    const lions = Math.floor(rng() * 2);
-    const opp = lions + 1 + Math.floor(rng() * 2);
-    return { lions, opp };
-  }
-  const g = small();
-  return { lions: g, opp: g };
-}
-
-const clubStars = new Map(LEAGUE_CLUBS.map((c) => [c.name, c.stars]));
-const LIONS_STARS = 2.5;
-const lionsStars = LIONS_STARS;
-
-const fixtureRows = [...document.querySelectorAll(".fixtures-table tbody tr[data-date]")];
-
-fixtureRows.forEach((row) => {
-  if (row.dataset.outcome) return; // already-played games keep their recorded result
-  const opponent = row.children[1].textContent.trim();
-  const opponentStars = clubStars.get(opponent) ?? 2.5;
-  const rng = seededRandom(`${row.dataset.date}|${opponent}`);
-  const outcome = pickOutcome(opponentStars, lionsStars, rng);
-  const { lions, opp } = pickScore(outcome, rng);
-  row.dataset.outcome = outcome;
-  row.dataset.score = `${lions}–${opp}`;
-});
-
-const upcoming = fixtureRows
-  .filter((row) => new Date(row.dataset.date) >= today)
-  .sort((a, b) => new Date(a.dataset.date) - new Date(b.dataset.date));
-const nextRow = upcoming[0];
-
-fixtureRows.forEach((row) => {
-  const resultCell = row.querySelector(".fx-result");
-  const rowDate = new Date(row.dataset.date);
-
-  if (row === nextRow) {
-    row.classList.add("is-next");
-    resultCell.innerHTML = '<span class="badge">Next match</span>';
-  } else if (rowDate < today) {
-    const outcome = row.dataset.outcome;
-    resultCell.textContent = `${outcomeLabels[outcome]} ${row.dataset.score}`;
-    resultCell.classList.add(`result-${outcome}`);
-  } else {
-    resultCell.textContent = "—";
-  }
-});
-
-if (nextRow) {
-  const scrollBox = nextRow.closest(".table-scroll--fixtures");
-  if (scrollBox) {
-    scrollBox.scrollTop = nextRow.offsetTop - scrollBox.clientHeight / 2;
-  }
-}
-
-// --- Standings ---------------------------------------------------------
-// Everyone in the league plays the same number of games as FC Lions do
-// (derived from how many of our fixtures have actually happened). Our own
-// row comes straight from the real, already-revealed fixture results; the
-// other 23 clubs' records are simulated with the same win/draw/loss model
-// used for our own results, seeded per club so the sequence is stable and
-// just keeps extending as more games get played rather than reshuffling.
-
-function computeLionsRecord() {
-  const record = { name: "FC Lions", stars: LIONS_STARS, played: 0, w: 0, d: 0, l: 0, gd: 0 };
-  fixtureRows.forEach((row) => {
-    if (new Date(row.dataset.date) >= today) return;
-    const [gf, ga] = row.dataset.score.split("–").map(Number);
-    record.played += 1;
-    record.gd += gf - ga;
-    if (row.dataset.outcome === "win") record.w += 1;
-    else if (row.dataset.outcome === "draw") record.d += 1;
-    else record.l += 1;
-  });
-  record.pts = record.w * 3 + record.d;
-  return record;
-}
-
-function simulateClubRecord(club, gamesPlayed) {
-  const rng = seededRandom(`club-form|${club.name}`);
-  const record = { name: club.name, stars: club.stars, played: gamesPlayed, w: 0, d: 0, l: 0, gd: 0 };
-  for (let i = 0; i < gamesPlayed; i++) {
-    // pickOutcome(opponentStars, teamStars, rng): treat "league average"
-    // (the same 2.5 baseline FC Lions is built around) as the opponent.
-    const outcome = pickOutcome(LIONS_STARS, club.stars, rng);
-    const { lions: gf, opp: ga } = pickScore(outcome, rng);
-    record.gd += gf - ga;
-    if (outcome === "win") record.w += 1;
-    else if (outcome === "draw") record.d += 1;
-    else record.l += 1;
-  }
-  record.pts = record.w * 3 + record.d;
-  return record;
-}
-
-function renderStandings() {
-  const body = document.getElementById("standings-body");
-  if (!body) return;
-
-  const gamesPlayed = fixtureRows.filter((row) => new Date(row.dataset.date) < today).length;
-  const lions = computeLionsRecord();
-  const table = [lions, ...LEAGUE_CLUBS.map((club) => simulateClubRecord(club, gamesPlayed))];
-  table.sort((a, b) => b.pts - a.pts || b.gd - a.gd);
-
-  body.innerHTML = "";
-  table.forEach((club, i) => {
-    const pos = i + 1;
-    const tr = document.createElement("tr");
-    if (club.name === "FC Lions") tr.className = "is-you";
-    else if (pos <= 3) tr.className = "is-promotion";
-    else if (pos > table.length - 3) tr.className = "is-relegation";
-
-    const gdText = club.gd > 0 ? `+${club.gd}` : club.gd < 0 ? `−${Math.abs(club.gd)}` : "0";
-    const pct = (club.stars / 5) * 100;
-    tr.innerHTML =
-      `<td>${pos}</td><td>${club.name}</td><td>${club.played}</td><td>${club.w}</td>` +
-      `<td>${club.d}</td><td>${club.l}</td><td>${gdText}</td><td>${club.pts}</td>` +
-      `<td><span class="stars" style="--pct: ${pct}%;" aria-label="${club.stars} out of 5 stars">` +
-      `<span class="stars-track">&#9733;&#9733;&#9733;&#9733;&#9733;</span>` +
-      `<span class="stars-fill">&#9733;&#9733;&#9733;&#9733;&#9733;</span></span></td>`;
-    body.appendChild(tr);
-  });
-}
-
-renderStandings();
-
 // Ages: random 19-35, weighted so ~75% of players land in the 24-29 prime range.
 function pickAge(rng) {
   const core = [24, 25, 26, 27, 28, 29];
@@ -219,9 +51,31 @@ function playerAge(name) {
 
 // Transfer fee: rises with rating, and rises the younger the player is
 // (more years of resale value left), floored/capped to a sane range.
+// Above rating 78, elite talent gets exponentially pricier: each rating
+// point above 78 compounds a per-point growth rate, and that rate itself
+// steps up at 81, 83, 85, 87, and 89 - so the curve doesn't just keep
+// rising, it rises faster the further into elite territory a player is.
+function ratingPremiumRate(r) {
+  if (r > 89) return 1.16;
+  if (r > 87) return 1.13;
+  if (r > 85) return 1.10;
+  if (r > 83) return 1.08;
+  if (r > 81) return 1.06;
+  return 1.04; // 79-81
+}
+
+function ratingPremiumFactor(rating) {
+  let factor = 1;
+  for (let r = 79; r <= rating; r++) {
+    factor *= ratingPremiumRate(r);
+  }
+  return factor;
+}
+
 function computePrice(rating, age) {
   const raw = (rating - 55) * 0.3 * ((36 - age) / 15);
-  return Math.round(Math.max(0.5, Math.min(9, raw)) * 10) / 10;
+  const withPremium = Math.max(0.5, raw) * ratingPremiumFactor(rating);
+  return Math.round(Math.max(0.5, Math.min(150, withPremium)) * 10) / 10;
 }
 
 // Career progression: rating rises while a player is developing (18-24),
@@ -302,7 +156,6 @@ const SHORTLIST_POSITIONS = [
   { position: "MID", positionLabel: "Attacking Mid" },
   { position: "FWD", positionLabel: "Right Wing" },
   { position: "FWD", positionLabel: "Left Wing" },
-  { position: "FWD", positionLabel: "Second Striker" },
   { position: "FWD", positionLabel: "Striker" },
 ];
 
@@ -322,29 +175,77 @@ const PROSPECT_LAST_NAMES = [
 
 let shortlistGenerationCounter = 0;
 
+// Shortlist quality tracks LIONS_STARS: most prospects are "scouted" picks
+// that scale with the club's reputation, while a small, fixed number
+// (BUDGET_COUNT, scattered across positions rather than one-per-position)
+// stay clearly cheaper fallback options - drifting up slowly with stars so
+// they don't go stale, but never closing the gap with the scouted tier.
+const BUDGET_COUNT = 5;
+
+// No shortlist prospect, budget or scouted, should ever roll below 63.
+const SHORTLIST_RATING_FLOOR = 63;
+
+function scoutedRatingRange(stars) {
+  const center = 70 + (stars - 2.5) * 6; // 1 star -> 61, 2.5 stars -> 70, 5 stars -> 85
+  let min = Math.max(SHORTLIST_RATING_FLOOR, Math.round(center - 5));
+  // Even at 2-2.5 stars, the ceiling should still reach 75 - only raises
+  // the top end for low-star tiers, higher tiers already clear this.
+  let max = Math.max(75, Math.round(center + 5), min);
+  // 77 should always be obtainable, regardless of star level - widen
+  // either end of the range if it would otherwise fall outside it.
+  min = Math.min(min, 77);
+  max = Math.max(max, 77);
+  return { min, max };
+}
+
+function budgetRatingRange(stars) {
+  const center = 60 + (stars - 2.5) * 2; // 1 star -> 57, 2.5 stars -> 60, 5 stars -> 65
+  const min = Math.max(SHORTLIST_RATING_FLOOR, Math.round(center - 3));
+  const max = Math.max(min, Math.round(center + 3));
+  return { min, max };
+}
+
+function randomRatingInRange({ min, max }) {
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
 function generateShortlist() {
   const usedNames = new Set(roster.map((p) => p.name));
   const prospects = [];
+  const shortlistStars = starsForAverage(shortlistAverageRating());
+  const scoutedRange = scoutedRatingRange(shortlistStars);
+  const budgetRange = budgetRatingRange(shortlistStars);
 
+  const slots = [];
   SHORTLIST_POSITIONS.forEach(({ position, positionLabel }) => {
-    for (let i = 0; i < 2; i++) {
-      let name;
-      do {
-        const first = PROSPECT_FIRST_NAMES[Math.floor(Math.random() * PROSPECT_FIRST_NAMES.length)];
-        const last = PROSPECT_LAST_NAMES[Math.floor(Math.random() * PROSPECT_LAST_NAMES.length)];
-        name = `${first} ${last}`;
-      } while (usedNames.has(name));
-      usedNames.add(name);
-      shortlistGenerationCounter += 1;
+    slots.push({ position, positionLabel });
+    slots.push({ position, positionLabel });
+  });
 
-      prospects.push({
-        id: `prospect-${shortlistGenerationCounter}-${name.toLowerCase().replace(/[^a-z]+/g, "-")}`,
-        name,
-        rating: 65 + Math.floor(Math.random() * 11), // 65-75
-        position,
-        positionLabel,
-      });
-    }
+  const budgetIndices = new Set();
+  while (budgetIndices.size < Math.min(BUDGET_COUNT, slots.length)) {
+    budgetIndices.add(Math.floor(Math.random() * slots.length));
+  }
+
+  slots.forEach(({ position, positionLabel }, index) => {
+    let name;
+    do {
+      const first = PROSPECT_FIRST_NAMES[Math.floor(Math.random() * PROSPECT_FIRST_NAMES.length)];
+      const last = PROSPECT_LAST_NAMES[Math.floor(Math.random() * PROSPECT_LAST_NAMES.length)];
+      name = `${first} ${last}`;
+    } while (usedNames.has(name));
+    usedNames.add(name);
+    shortlistGenerationCounter += 1;
+
+    const rating = randomRatingInRange(budgetIndices.has(index) ? budgetRange : scoutedRange);
+
+    prospects.push({
+      id: `prospect-${shortlistGenerationCounter}-${name.toLowerCase().replace(/[^a-z]+/g, "-")}`,
+      name,
+      rating,
+      position,
+      positionLabel,
+    });
   });
 
   return prospects;
@@ -381,10 +282,12 @@ const signedIds = loadSignedIds();
 
 function saveRoster() {
   localStorage.setItem(ROSTER_KEY, JSON.stringify(roster));
+  schedulePersist();
 }
 
 function saveSignedIds() {
   localStorage.setItem(SIGNED_KEY, JSON.stringify(signedIds));
+  schedulePersist();
 }
 
 const SHORTLIST_KEY = "fcLionsShortlist";
@@ -401,9 +304,13 @@ function loadShortlist() {
 
 function saveShortlist() {
   localStorage.setItem(SHORTLIST_KEY, JSON.stringify(shortlistProspects));
+  schedulePersist();
 }
 
-let shortlistProspects = loadShortlist();
+// Assigned further down, once LIONS_STARS is available - generateShortlist
+// (called from loadShortlist when there's nothing saved yet) scales
+// prospect quality off of it.
+let shortlistProspects;
 
 // Each player has their own random birthday (see playerBirthday) and ages
 // up once a year on that day rather than everyone turning older together.
@@ -436,19 +343,402 @@ function applyAging() {
 
   if (changed) saveRoster();
   localStorage.setItem(AGE_CHECKED_KEY, now.toISOString());
+  schedulePersist();
 }
 
 applyAging();
 
-// Selling: a listed player waits 24 real hours before an offer comes in.
-// Checked on every load (like aging) so it catches up whenever you return,
-// rather than needing the page to stay open.
-const SELL_WAIT_MS = 24 * 60 * 60 * 1000;
+// --- Injuries -----------------------------------------------------------
+// Each played game has a 3% chance of an injury: 80% a random uninjured
+// starter, 20% a random uninjured bench player. Duration is 3-6 weeks
+// (70%), 1-2 weeks (15%), or 7-10 weeks (15%). Weeks left count down by
+// one per game that passes while injured. Processed in fixture order,
+// catching up on however many games have passed since the site was last
+// opened - same pattern as aging and offers.
+const fixtureRows = [...document.querySelectorAll(".fixtures-table tbody tr[data-date]")];
+
+const INJURIES_KEY = "fcLionsInjuriesProcessedThrough";
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Weeks left counts down by real elapsed time (one week per 7 real days),
+// not by how many games have been played - so it's derived from when the
+// injury started rather than stored as a value that gets decremented.
+function weeksLeftAsOf(player, asOfDate) {
+  if (!player.injuryStartedAt || !player.injuryTotalWeeks) return 0;
+  const elapsedWeeks = Math.floor((asOfDate.getTime() - new Date(player.injuryStartedAt).getTime()) / WEEK_MS);
+  return Math.max(0, player.injuryTotalWeeks - elapsedWeeks);
+}
+
+function currentInjuryWeeksLeft(player) {
+  return weeksLeftAsOf(player, new Date());
+}
+
+// Clears injury fields once real time has fully elapsed, so recovered
+// players don't carry stale injury data around in storage.
+function tickInjuries() {
+  let changed = false;
+  roster.forEach((player) => {
+    if (player.injuryTotalWeeks && currentInjuryWeeksLeft(player) <= 0) {
+      delete player.injuryStartedAt;
+      delete player.injuryTotalWeeks;
+      changed = true;
+    }
+  });
+  if (changed) saveRoster();
+}
+
+function processInjuries() {
+  const storedISO = localStorage.getItem(INJURIES_KEY);
+  const lastProcessed = storedISO ? new Date(storedISO) : new Date(0);
+
+  const playedRows = fixtureRows
+    .filter((row) => new Date(row.dataset.date) <= today && new Date(row.dataset.date) > lastProcessed)
+    .sort((a, b) => new Date(a.dataset.date) - new Date(b.dataset.date));
+
+  if (!playedRows.length) {
+    tickInjuries();
+    return;
+  }
+
+  let changed = false;
+
+  playedRows.forEach((row) => {
+    const rowDate = new Date(row.dataset.date);
+    const rng = seededRandom(`injury|${row.dataset.date}`);
+    if (rng() < 0.03) {
+      const pool = rng() < 0.8
+        ? roster.filter((p) => p.group === "starter" && weeksLeftAsOf(p, rowDate) <= 0)
+        : roster.filter((p) => p.group === "bench" && weeksLeftAsOf(p, rowDate) <= 0);
+      if (pool.length) {
+        const victim = pool[Math.floor(rng() * pool.length)];
+        const bucket = rng();
+        let weeks;
+        if (bucket < 0.7) weeks = 3 + Math.floor(rng() * 4); // 3-6 weeks
+        else if (bucket < 0.85) weeks = 1 + Math.floor(rng() * 2); // 1-2 weeks
+        else weeks = 7 + Math.floor(rng() * 4); // 7-10 weeks
+        victim.injuryStartedAt = rowDate.toISOString();
+        victim.injuryTotalWeeks = weeks;
+        changed = true;
+      }
+    }
+  });
+
+  if (changed) saveRoster();
+  localStorage.setItem(INJURIES_KEY, playedRows[playedRows.length - 1].dataset.date);
+  schedulePersist();
+  tickInjuries();
+}
+
+processInjuries();
+
+// The rest of the EFL Championship. Star ratings are a fixed squad-quality
+// reputation (not derived from results); everything else about a club's
+// record - games played, W/D/L, GD, points, table position - is simulated
+// so the table actually moves as time passes, same as the fixtures do.
+const LEAGUE_CLUBS = [
+  { name: "Leeds United", stars: 4 },
+  { name: "Sheffield United", stars: 3 },
+  { name: "Burnley", stars: 3.5 },
+  { name: "Sunderland", stars: 3.5 },
+  { name: "Coventry City", stars: 3.5 },
+  { name: "Middlesbrough", stars: 3 },
+  { name: "West Bromwich Albion", stars: 2.5 },
+  { name: "Norwich City", stars: 2.5 },
+  { name: "Watford", stars: 2.5 },
+  { name: "Bristol City", stars: 2.5 },
+  { name: "Hull City", stars: 3 },
+  { name: "Preston North End", stars: 2.5 },
+  { name: "Millwall", stars: 2 },
+  { name: "Blackburn Rovers", stars: 2 },
+  { name: "Swansea City", stars: 2 },
+  { name: "Stoke City", stars: 2.5 },
+  { name: "Cardiff City", stars: 1.5 },
+  { name: "Queens Park Rangers", stars: 1.5 },
+  { name: "Portsmouth", stars: 1.5 },
+  { name: "Plymouth Argyle", stars: 1.5 },
+  { name: "Oxford United", stars: 1 },
+  { name: "Derby County", stars: 1 },
+  { name: "Sheffield Wednesday", stars: 1 },
+];
+
+function pickOutcome(opponentStars, lionsStars, rng) {
+  const diff = opponentStars - lionsStars;
+  const winWeight = Math.max(0.05, 1 - 0.35 * diff);
+  const lossWeight = Math.max(0.05, 1 + 0.35 * diff);
+  const drawWeight = 1;
+  const total = winWeight + drawWeight + lossWeight;
+  const r = rng() * total;
+  if (r < winWeight) return "win";
+  if (r < winWeight + drawWeight) return "draw";
+  return "loss";
+}
+
+function pickScore(outcome, rng) {
+  const small = () => Math.floor(rng() * 3); // 0, 1, or 2
+  if (outcome === "win") {
+    const opp = Math.floor(rng() * 2); // 0 or 1
+    const lions = opp + 1 + Math.floor(rng() * 2); // opp + 1 or 2
+    return { lions, opp };
+  }
+  if (outcome === "loss") {
+    const lions = Math.floor(rng() * 2);
+    const opp = lions + 1 + Math.floor(rng() * 2);
+    return { lions, opp };
+  }
+  const g = small();
+  return { lions: g, opp: g };
+}
+
+const clubStars = new Map(LEAGUE_CLUBS.map((c) => [c.name, c.stars]));
+
+// Star rating tracks the starting XI's average rating - each 0.5-star band
+// widens further down the scale as squad quality matters less at the margin.
+function starsForAverage(avg) {
+  if (avg >= 85) return 5;
+  if (avg >= 82) return 4.5;
+  if (avg >= 79) return 4;
+  if (avg >= 75) return 3.5;
+  if (avg >= 71) return 3;
+  if (avg >= 67) return 2.5;
+  if (avg >= 63) return 2;
+  if (avg >= 59) return 1.5;
+  return 1;
+}
+
+const FULL_LINEUP_SIZE = 11;
+
+function startersAverageRating() {
+  const starters = roster.filter((p) => p.group === "starter");
+  // An injured starter counts as a 0 rating for as long as they're out, and
+  // the average always divides by a full 11-player lineup - so running
+  // fewer than 11 starters (a sold player who was never replaced, say)
+  // counts each missing slot as a 0 rating too, same as an injury would.
+  const sum = starters.reduce((total, p) => total + (currentInjuryWeeksLeft(p) > 0 ? 0 : p.rating), 0);
+  return sum / FULL_LINEUP_SIZE;
+}
+
+// Used only for scaling shortlist quality - unlike startersAverageRating,
+// this divides by however many starters you actually have instead of a
+// fixed 11, so running short a player doesn't drag down the talent you
+// get offered. Everywhere else (the displayed star rating, match
+// difficulty) still uses the fixed-11 version, exactly as before.
+function shortlistAverageRating() {
+  const starters = roster.filter((p) => p.group === "starter");
+  if (!starters.length) return 0;
+  const sum = starters.reduce((total, p) => total + (currentInjuryWeeksLeft(p) > 0 ? 0 : p.rating), 0);
+  return sum / starters.length;
+}
+
+let LIONS_STARS = starsForAverage(startersAverageRating());
+const lionsStars = LIONS_STARS; // locked in for this session's fixture predictions, same as the rest of the sim
+
+shortlistProspects = loadShortlist();
+
+// Called after any roster change that can move the starting XI's average:
+// buying, a starter's sale going through, or a bench/starter swap. Also
+// re-renders the standings table so the displayed star count stays current.
+function refreshLionsStars() {
+  LIONS_STARS = starsForAverage(startersAverageRating());
+  renderStandings();
+}
+
+// Once a game's date has passed, its result is locked in permanently
+// using whatever star rating was in effect right then - a later star
+// change only shapes games that haven't been played yet, not ones that
+// already have. Still-upcoming games keep re-predicting with the current
+// rating each load, since they haven't happened, until their date passes
+// and they get locked in the same way.
+const LIONS_FIXTURE_RESULTS_KEY = "fcLionsFixtureResults";
+
+function loadLionsFixtureResults() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LIONS_FIXTURE_RESULTS_KEY));
+    if (saved && typeof saved === "object") return saved;
+  } catch {
+    // ignore malformed storage
+  }
+  return {};
+}
+
+const lionsFixtureResults = loadLionsFixtureResults();
+let lionsFixtureResultsChanged = false;
+
+fixtureRows.forEach((row) => {
+  if (row.dataset.outcome) return; // already-played games keep their recorded result
+  const isPast = new Date(row.dataset.date) < today;
+  const locked = lionsFixtureResults[row.dataset.date];
+
+  if (isPast && locked) {
+    row.dataset.outcome = locked.outcome;
+    row.dataset.score = locked.score;
+    return;
+  }
+
+  const opponent = row.children[1].textContent.trim();
+  const opponentStars = clubStars.get(opponent) ?? 2.5;
+  const rng = seededRandom(`${row.dataset.date}|${opponent}`);
+  const outcome = pickOutcome(opponentStars, lionsStars, rng);
+  const { lions, opp } = pickScore(outcome, rng);
+  row.dataset.outcome = outcome;
+  row.dataset.score = `${lions}–${opp}`;
+
+  if (isPast) {
+    lionsFixtureResults[row.dataset.date] = { outcome, score: row.dataset.score };
+    lionsFixtureResultsChanged = true;
+  }
+});
+
+if (lionsFixtureResultsChanged) {
+  localStorage.setItem(LIONS_FIXTURE_RESULTS_KEY, JSON.stringify(lionsFixtureResults));
+  schedulePersist();
+}
+
+const upcoming = fixtureRows
+  .filter((row) => new Date(row.dataset.date) >= today)
+  .sort((a, b) => new Date(a.dataset.date) - new Date(b.dataset.date));
+const nextRow = upcoming[0];
+
+fixtureRows.forEach((row) => {
+  const resultCell = row.querySelector(".fx-result");
+  const rowDate = new Date(row.dataset.date);
+
+  if (row === nextRow) {
+    row.classList.add("is-next");
+    resultCell.innerHTML = '<span class="badge">Next match</span>';
+  } else if (rowDate < today) {
+    const outcome = row.dataset.outcome;
+    resultCell.textContent = `${outcomeLabels[outcome]} ${row.dataset.score}`;
+    resultCell.classList.add(`result-${outcome}`);
+  } else {
+    resultCell.textContent = "—";
+  }
+});
+
+if (nextRow) {
+  const scrollBox = nextRow.closest(".table-scroll--fixtures");
+  if (scrollBox) {
+    scrollBox.scrollTop = nextRow.offsetTop - scrollBox.clientHeight / 2;
+  }
+}
+
+// --- Standings ---------------------------------------------------------
+// Everyone in the league plays the same number of games as FC Lions do
+// (derived from how many of our fixtures have actually happened). Our own
+// row comes straight from the real, already-revealed fixture results; the
+// other 23 clubs' records are simulated with the same win/draw/loss model
+// used for our own results, seeded per club so the sequence is stable and
+// just keeps extending as more games get played rather than reshuffling.
+
+function computeLionsRecord() {
+  const record = { name: "FC Lions", stars: LIONS_STARS, played: 0, w: 0, d: 0, l: 0, gd: 0 };
+  fixtureRows.forEach((row) => {
+    if (new Date(row.dataset.date) >= today) return;
+    const [gf, ga] = row.dataset.score.split("–").map(Number);
+    record.played += 1;
+    record.gd += gf - ga;
+    if (row.dataset.outcome === "win") record.w += 1;
+    else if (row.dataset.outcome === "draw") record.d += 1;
+    else record.l += 1;
+  });
+  record.pts = record.w * 3 + record.d;
+  return record;
+}
+
+// Each opponent's per-game results are cached once simulated, keyed by game
+// index, so a star-rating change only affects games simulated *after* the
+// change - already-decided games keep whatever result they got the first
+// time, instead of the whole season reshuffling every time stars move.
+// The rng itself is the same single stream per club as before (persisted
+// here instead of being recreated each call), so results are unchanged
+// from the original simulation as long as stars never move.
+const clubGameCache = new Map(); // club.name -> [{ outcome, gf, ga }, ...]
+const clubRngCache = new Map(); // club.name -> persistent seeded generator
+
+function simulateClubRecord(club, gamesPlayed) {
+  let games = clubGameCache.get(club.name);
+  if (!games) {
+    games = [];
+    clubGameCache.set(club.name, games);
+  }
+  let rng = clubRngCache.get(club.name);
+  if (!rng) {
+    rng = seededRandom(`club-form|${club.name}`);
+    clubRngCache.set(club.name, rng);
+  }
+  while (games.length < gamesPlayed) {
+    // pickOutcome(opponentStars, teamStars, rng): treat "league average"
+    // (the same LIONS_STARS baseline FC Lions is built around) as the
+    // opponent - using whatever LIONS_STARS is current right now, since
+    // this game hasn't been simulated (and locked in) before.
+    const outcome = pickOutcome(LIONS_STARS, club.stars, rng);
+    const { lions: gf, opp: ga } = pickScore(outcome, rng);
+    games.push({ outcome, gf, ga });
+  }
+
+  const record = { name: club.name, stars: club.stars, played: gamesPlayed, w: 0, d: 0, l: 0, gd: 0 };
+  for (let i = 0; i < gamesPlayed; i++) {
+    const { outcome, gf, ga } = games[i];
+    record.gd += gf - ga;
+    if (outcome === "win") record.w += 1;
+    else if (outcome === "draw") record.d += 1;
+    else record.l += 1;
+  }
+  record.pts = record.w * 3 + record.d;
+  return record;
+}
+
+function renderStandings() {
+  const body = document.getElementById("standings-body");
+  if (!body) return;
+
+  const gamesPlayed = fixtureRows.filter((row) => new Date(row.dataset.date) < today).length;
+  const lions = computeLionsRecord();
+  const table = [lions, ...LEAGUE_CLUBS.map((club) => simulateClubRecord(club, gamesPlayed))];
+  table.sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+
+  body.innerHTML = "";
+  table.forEach((club, i) => {
+    const pos = i + 1;
+    const tr = document.createElement("tr");
+    if (club.name === "FC Lions") tr.className = "is-you";
+    else if (pos <= 3) tr.className = "is-promotion";
+    else if (pos > table.length - 3) tr.className = "is-relegation";
+
+    const gdText = club.gd > 0 ? `+${club.gd}` : club.gd < 0 ? `−${Math.abs(club.gd)}` : "0";
+    const pct = (club.stars / 5) * 100;
+    tr.innerHTML =
+      `<td>${pos}</td><td>${club.name}</td><td>${club.played}</td><td>${club.w}</td>` +
+      `<td>${club.d}</td><td>${club.l}</td><td>${gdText}</td><td>${club.pts}</td>` +
+      `<td><span class="stars" style="--pct: ${pct}%;" aria-label="${club.stars} out of 5 stars">` +
+      `<span class="stars-track">&#9733;&#9733;&#9733;&#9733;&#9733;</span>` +
+      `<span class="stars-fill">&#9733;&#9733;&#9733;&#9733;&#9733;</span></span></td>`;
+    body.appendChild(tr);
+  });
+}
+
+renderStandings();
+
+
+// Selling: a listed player waits somewhere between 10 and 30 real hours
+// before an offer comes in - a fixed random draw per listing, not the same
+// wait every time. Checked on every load (like aging) so it catches up
+// whenever you return, rather than needing the page to stay open.
+function sellWaitMs(player) {
+  const rng = seededRandom(`sellwait|${player.id}|${player.listedAt}`);
+  const hours = 10 + rng() * 20; // 10-30 hours
+  return hours * 60 * 60 * 1000;
+}
 
 function generateOfferAmount(player) {
   const rng = seededRandom(`offer|${player.id}|${player.listedAt}`);
   const base = computePrice(player.rating, player.age);
-  const multiplier = 0.7 + rng() * 0.6; // buyers rarely pay exactly market value
+  const isAbove = rng() < 0.5; // coin flip: equally likely above or below market value
+  // Same exponential curve as the price premium: how far an offer can swing
+  // from market value widens the same way elite ratings get pricier - a
+  // 99-rated player's offers are wildly less predictable than a 70's.
+  const maxSwing = 0.3 * ratingPremiumFactor(player.rating);
+  const swing = rng() * maxSwing;
+  const multiplier = isAbove ? 1 + swing : 1 - swing;
   return Math.round(Math.max(0.3, base * multiplier) * 10) / 10;
 }
 
@@ -458,7 +748,7 @@ function checkOffers() {
   roster.forEach((player) => {
     if (player.listedAt && !player.offerAmount) {
       const elapsed = now - new Date(player.listedAt).getTime();
-      if (elapsed >= SELL_WAIT_MS) {
+      if (elapsed >= sellWaitMs(player)) {
         player.offerAmount = generateOfferAmount(player);
         changed = true;
       }
@@ -478,7 +768,7 @@ const POSITION_ORDER = [
   "Right Back", "Centre Back", "Left Back",
   "Defensive Mid", "Central Mid", "Attacking Mid",
   "Right Wing", "Right Winger", "Left Wing", "Left Winger", "Winger",
-  "Second Striker", "Striker",
+  "Striker",
 ];
 
 function positionSortIndex(positionLabel) {
@@ -501,6 +791,14 @@ function renderPlayerCard(player, { draggable = false, onActivate = null } = {})
       li.classList.add("is-dragging");
     });
     li.addEventListener("dragend", () => li.classList.remove("is-dragging"));
+  }
+
+  const weeksLeft = currentInjuryWeeksLeft(player);
+  if (weeksLeft > 0) {
+    const injuryEl = document.createElement("span");
+    injuryEl.className = "badge-injury";
+    injuryEl.textContent = `Injured - Able to play in ${weeksLeft} week${weeksLeft === 1 ? "" : "s"}`;
+    li.append(injuryEl);
   }
 
   const top = document.createElement("div");
@@ -529,7 +827,7 @@ function renderPlayerCard(player, { draggable = false, onActivate = null } = {})
 
   if (player.offerAmount) {
     const statusEl = document.createElement("span");
-    statusEl.className = "badge player-status-badge";
+    statusEl.className = "badge player-status-badge badge-offer";
     statusEl.textContent = `Offer: £${player.offerAmount}m`;
     li.append(statusEl);
   } else if (player.listedAt) {
@@ -581,6 +879,11 @@ function renderShortlist() {
     .forEach((p) => shortlistList.appendChild(renderPlayerCard(p, { onActivate: openBuyModal })));
 }
 
+// How many players a full XI is "supposed" to have in each role - every
+// role is 1 except Centre Back, which pairs up. Used to decide whether
+// dragging a player into a role should auto-swap out an existing one.
+const ROLE_QUOTAS = { "Centre Back": 2 };
+
 [starterList, benchList].forEach((list) => {
   if (!list) return;
   list.addEventListener("dragover", (e) => {
@@ -599,22 +902,19 @@ function renderShortlist() {
     const sourceGroup = draggedPlayer.group;
     if (sourceGroup === destinationGroup) return;
 
-    // Swap with a same-role player already in the destination list:
-    // promoting a bench player benches the destination's weakest starter
-    // in that exact role (Right Back <-> Right Back, not any defender),
-    // and vice versa - benching a starter promotes the destination's
-    // strongest bench player in that role. Falls back to the broader
-    // position group only if no exact-role match exists there.
-    const exactRoleMatch = roster.filter(
+    // Auto-swap only kicks in once the destination is already at the
+    // "supposed" headcount for that exact role (2 Centre Backs, 1 of
+    // every other role) - below that, the dragged player just adds in
+    // with nobody displaced. At or above quota, the weakest match in
+    // the destination (promoting) or strongest match (benching) swaps
+    // out to make room, same as before.
+    const roleMatches = roster.filter(
       (p) => p.id !== draggedPlayer.id && p.group === destinationGroup && p.positionLabel === draggedPlayer.positionLabel
     );
-    const broadPositionMatch = roster.filter(
-      (p) => p.id !== draggedPlayer.id && p.group === destinationGroup && p.position === draggedPlayer.position
-    );
-    const samePosition = exactRoleMatch.length ? exactRoleMatch : broadPositionMatch;
+    const quota = ROLE_QUOTAS[draggedPlayer.positionLabel] ?? 1;
     let swapPartner = null;
-    if (samePosition.length) {
-      swapPartner = samePosition.reduce((best, p) => {
+    if (roleMatches.length >= quota) {
+      swapPartner = roleMatches.reduce((best, p) => {
         if (destinationGroup === "starter") {
           return p.rating < best.rating ? p : best; // weakest starter gets benched
         }
@@ -627,6 +927,7 @@ function renderShortlist() {
 
     saveRoster();
     renderRoster();
+    refreshLionsStars();
   });
 });
 
@@ -642,6 +943,7 @@ function loadBudget() {
 
 function saveBudget() {
   localStorage.setItem(BUDGET_KEY, String(budget));
+  schedulePersist();
 }
 
 let budget = loadBudget();
@@ -704,6 +1006,7 @@ if (buyModal) {
     renderRoster();
     renderShortlist();
     renderBudget();
+    refreshLionsStars();
     closeBuyModal();
   });
 }
@@ -789,7 +1092,7 @@ function renderOffersList() {
   if (!offers.length) {
     const empty = document.createElement("li");
     empty.className = "offer-empty";
-    empty.textContent = "No offers yet. List a player for sale and check back in 24 hours.";
+    empty.textContent = "No offers yet. List a player for sale and check back in 10-30 hours.";
     offersListEl.appendChild(empty);
     return;
   }
@@ -838,6 +1141,7 @@ function acceptOffer(playerId) {
   renderBudget();
   renderOffersButton();
   renderOffersList();
+  refreshLionsStars();
 }
 
 function rejectOffer(playerId) {
@@ -881,6 +1185,7 @@ document.addEventListener("keydown", (e) => {
 // straight to the offers list; if still waiting on one, remind the user;
 // otherwise open the sell confirmation.
 function openSellFlow(player) {
+  if (currentInjuryWeeksLeft(player) > 0) return; // injured players can't be listed for sale
   if (player.offerAmount) {
     openOffersModal();
     return;
@@ -928,3 +1233,109 @@ filterButtons.forEach((button) => {
       });
   });
 });
+
+// --- Durable cross-redeploy save (db capability) ---------------------------
+// localStorage above is per-browser and gets wiped whenever this artifact is
+// redeployed with a new version, which is what made progress look like it
+// "reverted to the beginning". This mirrors the same game state into the
+// artifact's db, which survives redeploys, so it can be restored from there
+// automatically instead of only ever starting fresh.
+const GAME_STATE_DOC = "game/state";
+
+function collectGameState() {
+  return {
+    roster,
+    signedIds,
+    shortlist: shortlistProspects,
+    budget,
+    fixtureResults: lionsFixtureResults,
+    ageCheckedAt: localStorage.getItem(AGE_CHECKED_KEY),
+    injuriesProcessedThrough: localStorage.getItem(INJURIES_KEY),
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function applyRemoteGameState(state) {
+  if (!state || typeof state !== "object") return;
+
+  if (Array.isArray(state.roster) && state.roster.length) {
+    roster.length = 0;
+    state.roster.forEach((p) => roster.push(p));
+    localStorage.setItem(ROSTER_KEY, JSON.stringify(roster));
+  }
+  if (Array.isArray(state.signedIds)) {
+    signedIds.length = 0;
+    state.signedIds.forEach((id) => signedIds.push(id));
+    localStorage.setItem(SIGNED_KEY, JSON.stringify(signedIds));
+  }
+  if (Array.isArray(state.shortlist) && state.shortlist.length) {
+    shortlistProspects.length = 0;
+    state.shortlist.forEach((p) => shortlistProspects.push(p));
+    localStorage.setItem(SHORTLIST_KEY, JSON.stringify(shortlistProspects));
+  }
+  if (Number.isFinite(state.budget)) {
+    budget = state.budget;
+    localStorage.setItem(BUDGET_KEY, String(budget));
+  }
+  if (state.fixtureResults && typeof state.fixtureResults === "object") {
+    Object.assign(lionsFixtureResults, state.fixtureResults);
+    localStorage.setItem(LIONS_FIXTURE_RESULTS_KEY, JSON.stringify(lionsFixtureResults));
+    fixtureRows.forEach((row) => {
+      const locked = lionsFixtureResults[row.dataset.date];
+      if (locked) {
+        row.dataset.outcome = locked.outcome;
+        row.dataset.score = locked.score;
+      }
+    });
+  }
+  if (state.ageCheckedAt) localStorage.setItem(AGE_CHECKED_KEY, state.ageCheckedAt);
+  if (state.injuriesProcessedThrough) localStorage.setItem(INJURIES_KEY, state.injuriesProcessedThrough);
+
+  renderRoster();
+  renderShortlist();
+  renderBudget();
+  renderOffersButton();
+  renderOffersList();
+  refreshLionsStars(); // also re-renders standings
+}
+
+let dbReadyPromise = null;
+let dbWriteQueue = Promise.resolve();
+
+function persistGameStateToDb() {
+  if (!dbReadyPromise) return;
+  const snapshot = collectGameState();
+  dbWriteQueue = dbWriteQueue
+    .then(async () => {
+      const db = await dbReadyPromise;
+      if (!db) return;
+      await db.doc(GAME_STATE_DOC).set(snapshot);
+    })
+    .catch(() => {
+      // Offline or db unavailable this load - localStorage still has the
+      // save, and the next successful save will retry the sync.
+    });
+}
+
+if (window.claude && typeof window.claude.use === "function") {
+  dbReadyPromise = window.claude.use("db");
+  dbReadyPromise
+    .then(async (db) => {
+      if (!db) return;
+      try {
+        const doc = await db.doc(GAME_STATE_DOC).get();
+        if (doc && doc.exists && doc.data) {
+          applyRemoteGameState(doc.data);
+        } else {
+          // Nothing saved remotely yet - seed it with this device's state.
+          schedulePersist();
+        }
+      } catch {
+        // Read failed - keep showing the localStorage state as-is.
+      }
+    })
+    .catch(() => {});
+}
+
+schedulePersist = persistGameStateToDb;
+
