@@ -26,6 +26,107 @@ export const SYMBOL_MAP: Record<string, string> = {
   FIL: "FILUSDT",
   NEAR: "NEARUSDT",
   SUI: "SUIUSDT",
+
+  MATIC: "MATICUSDT",
+  ARB: "ARBUSDT",
+  OP: "OPUSDT",
+  SEI: "SEIUSDT",
+  INJ: "INJUSDT",
+  RNDR: "RNDRUSDT",
+  TIA: "TIAUSDT",
+  FTM: "FTMUSDT",
+  ALGO: "ALGOUSDT",
+  VET: "VETUSDT",
+  ICP: "ICPUSDT",
+  HBAR: "HBARUSDT",
+  THETA: "THETAUSDT",
+  XLM: "XLMUSDT",
+  XTZ: "XTZUSDT",
+  EOS: "EOSUSDT",
+  EGLD: "EGLDUSDT",
+  SAND: "SANDUSDT",
+  MANA: "MANAUSDT",
+  AXS: "AXSUSDT",
+  GALA: "GALAUSDT",
+  CHZ: "CHZUSDT",
+  ENJ: "ENJUSDT",
+  GRT: "GRTUSDT",
+  IMX: "IMXUSDT",
+  RUNE: "RUNEUSDT",
+  KAVA: "KAVAUSDT",
+  ZEC: "ZECUSDT",
+  DASH: "DASHUSDT",
+  CAKE: "CAKEUSDT",
+  SUSHI: "SUSHIUSDT",
+  COMP: "COMPUSDT",
+  MKR: "MKRUSDT",
+  SNX: "SNXUSDT",
+  CRV: "CRVUSDT",
+  YFI: "YFIUSDT",
+  BAT: "BATUSDT",
+  ZRX: "ZRXUSDT",
+  QTUM: "QTUMUSDT",
+  ONT: "ONTUSDT",
+  IOST: "IOSTUSDT",
+  ICX: "ICXUSDT",
+  WAVES: "WAVESUSDT",
+  KSM: "KSMUSDT",
+  FLOW: "FLOWUSDT",
+  CELO: "CELOUSDT",
+  ROSE: "ROSEUSDT",
+  ONE: "ONEUSDT",
+  ANKR: "ANKRUSDT",
+  STORJ: "STORJUSDT",
+  FET: "FETUSDT",
+  LDO: "LDOUSDT",
+  ENS: "ENSUSDT",
+  MASK: "MASKUSDT",
+  DYDX: "DYDXUSDT",
+  GMX: "GMXUSDT",
+  PYTH: "PYTHUSDT",
+  JTO: "JTOUSDT",
+  JUP: "JUPUSDT",
+  WIF: "WIFUSDT",
+  BONK: "BONKUSDT",
+  FLOKI: "FLOKIUSDT",
+  TRX: "TRXUSDT",
+  NEO: "NEOUSDT",
+  LUNC: "LUNCUSDT",
+  APE: "APEUSDT",
+  GMT: "GMTUSDT",
+  STX: "STXUSDT",
+  ORDI: "ORDIUSDT",
+  WLD: "WLDUSDT",
+  TON: "TONUSDT",
+  AR: "ARUSDT",
+  RVN: "RVNUSDT",
+  ZIL: "ZILUSDT",
+  HOT: "HOTUSDT",
+  WIN: "WINUSDT",
+  CVC: "CVCUSDT",
+  KNC: "KNCUSDT",
+  BAND: "BANDUSDT",
+  LRC: "LRCUSDT",
+  BAL: "BALUSDT",
+  NMR: "NMRUSDT",
+  RLC: "RLCUSDT",
+  ANT: "ANTUSDT",
+  KDA: "KDAUSDT",
+  SXP: "SXPUSDT",
+  C98: "C98USDT",
+  DYM: "DYMUSDT",
+  STRK: "STRKUSDT",
+  ALT: "ALTUSDT",
+  PIXEL: "PIXELUSDT",
+  PORTAL: "PORTALUSDT",
+  AEVO: "AEVOUSDT",
+  ETHFI: "ETHFIUSDT",
+  ENA: "ENAUSDT",
+  W: "WUSDT",
+  SAGA: "SAGAUSDT",
+  OMNI: "OMNIUSDT",
+  NOT: "NOTUSDT",
+  RAY: "RAYUSDT",
 };
 
 const COINBASE_SYMBOL_MAP: Record<string, string> = {
@@ -46,6 +147,75 @@ const COINBASE_SYMBOL_MAP: Record<string, string> = {
   FIL: "FIL-USD",
   NEAR: "NEAR-USD",
   SUI: "SUI-USD",
+
+  // Best-effort fallback coverage — not every "more" coin has a Coinbase
+  // pair, and that's fine: coinbaseTicker/etc. throw cleanly on a missing
+  // entry, so those symbols just rely on Binance (see fetchAllTickers,
+  // which tolerates individual failures instead of one bad symbol
+  // breaking the whole list).
+  MATIC: "MATIC-USD",
+  ARB: "ARB-USD",
+  OP: "OP-USD",
+  SEI: "SEI-USD",
+  INJ: "INJ-USD",
+  TIA: "TIA-USD",
+  FTM: "FTM-USD",
+  ALGO: "ALGO-USD",
+  VET: "VET-USD",
+  ICP: "ICP-USD",
+  HBAR: "HBAR-USD",
+  XLM: "XLM-USD",
+  XTZ: "XTZ-USD",
+  EOS: "EOS-USD",
+  SAND: "SAND-USD",
+  MANA: "MANA-USD",
+  AXS: "AXS-USD",
+  GALA: "GALA-USD",
+  CHZ: "CHZ-USD",
+  ENJ: "ENJ-USD",
+  GRT: "GRT-USD",
+  IMX: "IMX-USD",
+  RUNE: "RUNE-USD",
+  KAVA: "KAVA-USD",
+  ZEC: "ZEC-USD",
+  CRV: "CRV-USD",
+  YFI: "YFI-USD",
+  BAT: "BAT-USD",
+  ZRX: "ZRX-USD",
+  KSM: "KSM-USD",
+  FLOW: "FLOW-USD",
+  CELO: "CELO-USD",
+  ROSE: "ROSE-USD",
+  ANKR: "ANKR-USD",
+  STORJ: "STORJ-USD",
+  FET: "FET-USD",
+  LDO: "LDO-USD",
+  ENS: "ENS-USD",
+  MASK: "MASK-USD",
+  DYDX: "DYDX-USD",
+  PYTH: "PYTH-USD",
+  JTO: "JTO-USD",
+  JUP: "JUP-USD",
+  WIF: "WIF-USD",
+  BONK: "BONK-USD",
+  FLOKI: "FLOKI-USD",
+  TRX: "TRX-USD",
+  APE: "APE-USD",
+  GMT: "GMT-USD",
+  STX: "STX-USD",
+  WLD: "WLD-USD",
+  AR: "AR-USD",
+  ZIL: "ZIL-USD",
+  KNC: "KNC-USD",
+  BAND: "BAND-USD",
+  LRC: "LRC-USD",
+  BAL: "BAL-USD",
+  DYM: "DYM-USD",
+  STRK: "STRK-USD",
+  ETHFI: "ETHFI-USD",
+  ENA: "ENA-USD",
+  W: "W-USD",
+  RAY: "RAY-USD",
 };
 
 export type Candle = {
@@ -171,6 +341,7 @@ async function binanceTrades(symbol: string, limit: number): Promise<Trade[]> {
 
 async function coinbaseTicker(symbol: string): Promise<Ticker> {
   const pair = COINBASE_SYMBOL_MAP[symbol];
+  if (!pair) throw new Error(`No Coinbase pair for ${symbol}`);
   const data = await getJson<{ open: string; last: string }>(`${COINBASE_BASE_URL}/products/${pair}/stats`);
   const last = Number(data.last);
   const open = Number(data.open);
@@ -194,6 +365,7 @@ const COINBASE_GRANULARITY: Record<string, number> = {
 
 async function coinbaseCandles(symbol: string, interval: string, limit: number, range?: CandleRange): Promise<Candle[]> {
   const pair = COINBASE_SYMBOL_MAP[symbol];
+  if (!pair) throw new Error(`No Coinbase pair for ${symbol}`);
   const granularity = COINBASE_GRANULARITY[interval] ?? 3600;
   let url = `${COINBASE_BASE_URL}/products/${pair}/candles?granularity=${granularity}`;
   if (range) {
@@ -216,6 +388,7 @@ async function coinbaseCandles(symbol: string, interval: string, limit: number, 
 
 async function coinbaseOrderBook(symbol: string): Promise<{ bids: OrderBookRow[]; asks: OrderBookRow[] }> {
   const pair = COINBASE_SYMBOL_MAP[symbol];
+  if (!pair) throw new Error(`No Coinbase pair for ${symbol}`);
   const data = await getJson<{ bids: [string, string, number][]; asks: [string, string, number][] }>(
     `${COINBASE_BASE_URL}/products/${pair}/book?level=2`
   );
@@ -224,6 +397,7 @@ async function coinbaseOrderBook(symbol: string): Promise<{ bids: OrderBookRow[]
 
 async function coinbaseTrades(symbol: string, limit: number): Promise<Trade[]> {
   const pair = COINBASE_SYMBOL_MAP[symbol];
+  if (!pair) throw new Error(`No Coinbase pair for ${symbol}`);
   const data = await getJson<{ trade_id: number; price: string; size: string; time: string; side: "buy" | "sell" }[]>(
     `${COINBASE_BASE_URL}/products/${pair}/trades`
   );
@@ -254,8 +428,49 @@ export async function fetchTicker(symbol: string): Promise<Ticker> {
   return withFallback(() => binanceTicker(symbol), () => coinbaseTicker(symbol));
 }
 
+// Now that there are 100+ tracked coins, fetching each ticker individually
+// would mean 100+ requests per refresh. Binance's bulk endpoint (no symbol
+// param) returns every pair in one call instead, so that's tried first;
+// only symbols missing from that response (or, if the bulk call itself
+// fails, every symbol) fall back to the per-symbol Binance→Coinbase path.
+// One flaky/delisted symbol never takes down the whole list — it's just
+// omitted.
 export async function fetchAllTickers(): Promise<Ticker[]> {
-  return Promise.all(Object.keys(SYMBOL_MAP).map(fetchTicker));
+  const symbols = Object.keys(SYMBOL_MAP);
+
+  try {
+    const all = await getJson<
+      { symbol: string; lastPrice: string; priceChange: string; priceChangePercent: string }[]
+    >(`${BINANCE_BASE_URL}/ticker/24hr`);
+    const byPair = new Map(all.map((t) => [t.symbol, t]));
+
+    const tickers: Ticker[] = [];
+    const missing: string[] = [];
+    for (const symbol of symbols) {
+      const data = byPair.get(SYMBOL_MAP[symbol]);
+      if (data) {
+        tickers.push({
+          symbol,
+          lastPrice: Number(data.lastPrice),
+          priceChange: Number(data.priceChange),
+          priceChangePercent: Number(data.priceChangePercent),
+        });
+      } else {
+        missing.push(symbol);
+      }
+    }
+
+    if (missing.length > 0) {
+      const fallback = await Promise.allSettled(missing.map(fetchTicker));
+      for (const r of fallback) if (r.status === "fulfilled") tickers.push(r.value);
+    }
+    return tickers;
+  } catch {
+    const results = await Promise.allSettled(symbols.map(fetchTicker));
+    return results
+      .filter((r): r is PromiseFulfilledResult<Ticker> => r.status === "fulfilled")
+      .map((r) => r.value);
+  }
 }
 
 export async function fetchCandles(

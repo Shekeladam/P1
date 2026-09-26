@@ -461,11 +461,20 @@ export default function TradePage() {
               onChange={(e) => setTradeSymbol(e.target.value)}
               className="w-full rounded-md bg-zinc-900 border border-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
             >
-              {COINS.map((c) => (
-                <option key={c.symbol} value={c.symbol}>
-                  {c.symbol} — {c.name}
-                </option>
-              ))}
+              <optgroup label="Popular">
+                {COINS.filter((c) => c.category === "popular").map((c) => (
+                  <option key={c.symbol} value={c.symbol}>
+                    {c.symbol} — {c.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="More Coins">
+                {COINS.filter((c) => c.category === "more").map((c) => (
+                  <option key={c.symbol} value={c.symbol}>
+                    {c.symbol} — {c.name}
+                  </option>
+                ))}
+              </optgroup>
             </select>
 
             <div className="flex rounded-md overflow-hidden border border-zinc-800 text-sm">
