@@ -724,9 +724,10 @@ renderStandings();
 // wait every time. Checked on every load (like aging) so it catches up
 // whenever you return, rather than needing the page to stay open.
 function sellWaitMs(player) {
-  const rng = seededRandom(`sellwait|${player.id}|${player.listedAt}`);
-  const hours = 10 + rng() * 20; // 10-30 hours
-  return hours * 60 * 60 * 1000;
+  return 60 * 1000; // TEMPORARY: 1 minute (normally 10-30 hours, see below)
+  // const rng = seededRandom(`sellwait|${player.id}|${player.listedAt}`);
+  // const hours = 10 + rng() * 20; // 10-30 hours
+  // return hours * 60 * 60 * 1000;
 }
 
 function generateOfferAmount(player) {
