@@ -25,6 +25,9 @@ export function TopBar() {
         <Link className="hover:text-zinc-100" href="/leaderboard">
           Leaderboard
         </Link>
+        <Link className="hover:text-zinc-100" href="/currency">
+          Currency
+        </Link>
         <Link className="hover:text-zinc-100" href="/subscribe">
           Digest
         </Link>
