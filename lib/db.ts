@@ -389,3 +389,10 @@ export async function updateUserPassword(userId: number, passwordHash: string, p
     userId,
   ]);
 }
+
+// --- Account deletion ---
+// Holdings, trades, and password_resets all have ON DELETE CASCADE on their
+// user_id foreign key, so deleting the users row alone cleans up everything.
+export async function deleteUser(userId: number): Promise<void> {
+  await getPool().query(`DELETE FROM users WHERE id = $1`, [userId]);
+}

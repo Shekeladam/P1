@@ -393,6 +393,12 @@ export default function TradePage() {
           >
             Leaderboard
           </Link>
+          <Link
+            href="/settings"
+            className="text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 rounded px-2 py-1"
+          >
+            Settings
+          </Link>
           <button
             onClick={handleSignOut}
             className="text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 rounded px-2 py-1 cursor-pointer"

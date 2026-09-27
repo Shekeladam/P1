@@ -34,6 +34,8 @@ export async function GET() {
 
     return NextResponse.json({
       email: user.email,
+      displayName: user.display_name,
+      hasPassword: !!user.password_hash,
       cashBalance: user.cash_balance,
       holdings: priced,
       holdingsValue,
